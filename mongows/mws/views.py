@@ -9,6 +9,8 @@ from flask import session
 from . import db
 from werkzeug.exceptions import BadRequest
 
+from .util import get_internal_coll_name
+
 mws = Blueprint('mws', __name__, url_prefix='/mws')
 
 CLIENTS_COLLECTION = 'clients'
@@ -106,7 +108,13 @@ def create_mws_resource():
         res_id = cursor[0]['res_id']
     else:
         res_id = generate_res_id()
-        clients.insert({'version': 1, 'res_id': res_id, 'session_id': session_id, 'timestamp': datetime.now()})
+        clients.insert({
+            'version': 1,
+            'res_id': res_id,
+            'collections': [],
+            'session_id': session_id,
+            'timestamp': datetime.now()
+        })
     return to_json({'res_id': res_id})
 
 
@@ -154,6 +162,7 @@ def db_collection_insert(res_id, collection_name):
 
     internal_coll_name = get_internal_coll_name(res_id, collection_name)
     objIDs = db.get_db()[internal_coll_name].insert(document)
+    insert_client_collection(res_id, collection_name)
     result = {'result': objIDs}
     return to_json(result)
 
@@ -195,6 +204,7 @@ def db_collection_update(res_id, collection_name):
 
     internal_coll_name = get_internal_coll_name(res_id, collection_name)
     db.get_db()[internal_coll_name].update(query, update, upsert, multi=multi)
+    insert_client_collection(res_id, collection_name)
 
     return to_json({})
 
@@ -207,6 +217,7 @@ def db_collection_update(res_id, collection_name):
 def db_collection_drop(res_id, collection_name):
     internal_coll_name = get_internal_coll_name(res_id, collection_name)
     db.get_db().drop_collection(internal_coll_name)
+    remove_client_collection(res_id, collection_name)
     return to_json({})
 
 
@@ -217,10 +228,6 @@ def db_collection_drop(res_id, collection_name):
 @ratelimit
 def __ratelimit_test(res_id):
     return '', 204
-
-
-def get_internal_coll_name(res_id, collection_name):
-    return res_id + collection_name
 
 
 def generate_res_id():
@@ -248,6 +255,15 @@ def parse_get_json(request):
     except ValueError:
         raise BadRequest
 
+
+def insert_client_collection(res_id, coll):
+    clients = db.get_db()[CLIENTS_COLLECTION]
+    clients.update({'res_id': res_id}, {'$addToSet': {'collections': coll }}, multi=True)
+
+
+def remove_client_collection(res_id, coll):
+    clients = db.get_db()[CLIENTS_COLLECTION]
+    clients.update({'res_id': res_id}, {'$pull': {'collections': coll }}, multi=True)
 
 def err(code, message, detail=''):
     return dumps({'error': code, 'reason': message, 'detail': detail}), code
