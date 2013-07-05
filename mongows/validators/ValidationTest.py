@@ -1,3 +1,4 @@
+import os
 from mongows.mws.db import get_db
 from mongows.mws.util import UseResId
 from abc import ABCMeta, abstractmethod
@@ -6,7 +7,7 @@ from collections import Counter
 
 class ValidationTest:
     __metaclass__ = ABCMeta
-
+    
     def __init__(self, res_id):
         self.res_id = res_id
         self.db = get_db()
@@ -58,3 +59,7 @@ class ValidationTest:
     @abstractmethod
     def run(self):
         pass
+
+def get_file_in_dir(module_file, file_name):
+    script_path = os.path.realpath(module_file)
+    return os.path.join(os.path.dirname(script_path), file_name)
