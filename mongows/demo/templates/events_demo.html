@@ -2,17 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>MongoDB Web Shell Sample Page</title>
+  <title>MongoDB Tutorial</title>
   <style type="text/css">
     {% include "default.css" %}
   </style>
 </head>
 <body>
   <div class="content-wrapper">
-    <h1>Welcome to the mongoDB web shell!</h1>
-    <p id="prompt">Try</p>
+    <h1 style="text-align: center">Let's learn MongoDB!</h1>
+
+    <h3>We'll walk you through the basics of using MongoDB. You can use the
+      shell below to try out commands and follow along with the tutorial.</h3>
+
+    <p id="prompt"></p>
     <div class="mongo-web-shell">
-      <p>connecting to database</p>
+      <!--<p>connecting to database</p>-->
       <p>type "help" for help</p>
     </div>
   </div>
@@ -22,33 +26,61 @@
   <script type="text/javascript">
     $(window).load(function(){setTimeout(function () {
       var shell = mongo.shells[0];
+      var targetCollection = null;
       $('#prompt').html('Try running an insert command<br />' +
-                        'You can do this by typing db.collection.insert(...)');
+                        'You can do this by typing db.&lt;collection name&gt;.insert(...)');
 
       mongo.events.bindOnce(shell, 'db:collection:insert', function(e, data){
-        $('#prompt').html('Great job. You called insert on ' + data.collection + ' with ' +
+        $('#prompt').html('Great job! You called insert on ' + data.collection + ' with ' +
                           JSON.stringify($.makeArray(data.arguments)) +
                           ' as arguments<br />'+
                           'Try running a find command to make sure your ' +
                           'data was saved to the database.<br />' +
-                          'You can do this by typing db.collection.find(...)');
+                          'You can do this by typing db.' + data.collection + '.find(...)');
+        targetCollection = data.collection;
 
       }).then(function(){
-        return mongo.events.bindOnce(shell, 'db:collection:find', function(e, data){
-          $('#prompt').html('Great job. You called find on ' + data.collection + ' with ' +
-                            JSON.stringify($.makeArray(data.arguments)) + ' as arguments');
-        });
+        var deferred = $.Deferred();
+        function doFindBind() {
+          mongo.events.bindOnce(shell, 'db:collection:find', function(e, data){
+            if (data.collection === targetCollection) {
+              $('#prompt').html('Great job. You called find on ' + data.collection + ' with ' +
+                                JSON.stringify($.makeArray(data.arguments)) + ' as arguments');
+              deferred.resolve();
+            } else {
+              doFindBind();
+            }
+          });
+        }
+        doFindBind();
+        return deferred;
       }).then(function(){
         return mongo.events.bindOnce(shell, 'cursor:execute', function(e, data){
           $('#prompt').append('<br />Find returned with ' + data.result.length + ' results<br />' +
-                              'Try cleaning up this data with db.collection.remove(...)');
+                              'Try cleaning up this data with db.' + targetCollection + '.remove(...)');
         });
       }).then(function(){
-        return mongo.events.bindOnce(shell, 'db:collection:remove', function(e, data){
-          $('#prompt').html('Great job. You called remove on ' + data.collection + ' with ' +
+//        return mongo.events.bindOnce(shell, 'db:collection:remove', function(e, data){
+//          $('#prompt').html('Great job. You called remove on ' + data.collection + ' with ' +
+//                            JSON.stringify($.makeArray(data.arguments)) +
+//                            ' as arguments<br />You graduate!');
+//        });
+
+        var deferred = $.Deferred();
+        function doRemoveBind() {
+          mongo.events.bindOnce(shell, 'db:collection:remove', function(e, data){
+            if (data.collection === targetCollection) {
+              $('#prompt').html('Great job. You called remove on ' + data.collection + ' with ' +
                             JSON.stringify($.makeArray(data.arguments)) +
-                            ' as arguments<br />You graduate!');
-        });
+                            ' as arguments.<br />Congratulations, you\'ve graduated!');
+              deferred.resolve();
+            } else {
+              doRemoveBind();
+            }
+          });
+        }
+        doRemoveBind();
+        return deferred;
       });
     }, 100)});
   </script>

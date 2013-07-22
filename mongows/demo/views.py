@@ -13,3 +13,8 @@ def render():
 @demo.route('/events_demo')
 def render_events_demo():
     return render_template('events_demo.html')
+
+
+@demo.route('/edu_demo')
+def render_edu_demo():
+    return render_template('edu_demo.html')
