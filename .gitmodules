@@ -13,3 +13,6 @@
 [submodule "frontend/lib/blockui"]
 	path = frontend/lib/blockui
 	url = git://github.com/malsup/blockui.git
+[submodule "frontend/lib/es5-shim"]
+	path = frontend/lib/es5-shim
+	url = git://github.com/kriskowal/es5-shim
