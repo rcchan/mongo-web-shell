@@ -1,6 +1,7 @@
 /* global mongo */
-mongo.Readline = function ($input) {
-  this.$input = $input;
+mongo.Readline = function (codemirror, submitFunction) {
+  this.inputBox = codemirror;
+  this.submitFunction = submitFunction;
   if (localStorage){
     this.history = localStorage[mongo.const.shellHistoryKey];
   }
@@ -8,8 +9,7 @@ mongo.Readline = function ($input) {
   this.historyIndex = this.history.length;
   this.historyFirstCommand = '';
 
-  var readline = this;
-  this.$input.keydown(function (event) { readline.keydown(event); });
+  this.inputBox.on('keydown', function (codemirror, event) {this.keydown(event);}.bind(this));
 };
 
 mongo.Readline.prototype.keydown = function (event) {
@@ -23,14 +23,15 @@ mongo.Readline.prototype.keydown = function (event) {
     line = this.getNewerHistoryEntry();
     break;
   case key.enter:
-    this.submit(this.$input.val());
+    this.submit(this.inputBox.getValue());
     break;
   default:
     return;
   }
 
+  event.preventDefault();
   if (line !== undefined && line !== null) {
-    this.$input.val(line);
+    this.inputBox.setValue(line);
     this.moveCursorToEnd();
   }
 };
@@ -93,29 +94,16 @@ mongo.Readline.prototype.submit = function (line) {
   }
 
   this.historyIndex = this.history.length;
+  this.submitFunction();
 };
 
 mongo.Readline.prototype.moveCursorToEnd = function() {
-  var $inp = this.$input;
-  var inp = $inp.get(0);
-
-  // This needs to happen after the key event finishes dispatching
-  setTimeout(function () {
-    // Taken from: http://stackoverflow.com/a/1675345
-    if (inp.setSelectionRange) {
-      // Use function if it exists.
-      // (Doesn't work in IE)
-
-      // Double the length because Opera is inconsistent about whether a
-      // carriage return is one character or two.
-      var len = $inp.val().length * 2;
-      inp.setSelectionRange(len, len);
-    } else {
-      // Otherwise use workaround.
-      // (Doesn't work in Google Chrome)
-      $inp.val($inp.val());
-    }
-  }, 0);
+  var lastLine = this.inputBox.lineCount() - 1;
+  var lastChar = this.inputBox.getLine(lastLine).length - 1;
+  this.inputBox.setCursor({
+    line: lastLine,
+    pos: lastChar
+  });
 };
 
 mongo.Readline.prototype.getLastCommand = function(){
