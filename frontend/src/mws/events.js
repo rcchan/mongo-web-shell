@@ -36,7 +36,7 @@ mongo.events = {
     data = $.extend({shell: shell}, data);
     var wrappedHandler = function(){
       handler.apply(shell, arguments);
-      $(shell.$rootElement).unbind('mws:' + event, arguments.callee.caller);
+      mongo.events.unbind(shell, event, arguments.callee.caller);
     };
     return mongo.events.bind(shell, event, wrappedHandler, data, filter);
   },
@@ -45,5 +45,9 @@ mongo.events = {
     return mongo.shells.map(function(e){
       return mongo.events.bind(e, event, handler, data, filter);
     });
+  },
+
+  unbind: function(shell, event, handler){
+    $(shell.$rootElement).unbind('mws:' + event, handler);
   }
 };
