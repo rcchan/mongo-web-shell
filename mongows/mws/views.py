@@ -7,7 +7,7 @@ from bson.json_util import dumps, loads
 from flask import Blueprint, current_app, make_response, request
 from flask import session
 
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, Forbidden
 
 from pymongo.errors import OperationFailure
 from mongows.mws.db import get_db
@@ -298,6 +298,64 @@ def db_collection_count(res_id, collection_name):
         cursor = get_db()[collection_name].find(query, skip=skip, limit=limit)
         count = cursor.count(use_skip_limit)
         return to_json({'count': count})
+
+
+@mws.route('/<res_id>/db/<collection_name>/ensureIndex', methods=['POST'])
+@crossdomain(headers='Content-type', origin=REQUEST_ORIGIN)
+@check_session_id
+@ratelimit
+def db_collection_ensure_index(res_id, collection_name):
+    keys = request.json.get('keys')
+    if not keys:
+        return err(400, 'No key to index')
+
+    options = request.json.get('options') or {}
+    with UseResId(res_id, allowSystem=True):
+        if collection_name == 'system':
+            raise Forbidden('Collection name may not begin with system.*')
+        get_db()[collection_name].ensure_index(keys.items(), **options)
+    return empty_success()
+
+
+@mws.route('/<res_id>/db/<collection_name>/reIndex', methods=['PUT'])
+@crossdomain(headers='Content-type', origin=REQUEST_ORIGIN)
+@check_session_id
+@ratelimit
+def db_collection_reindex(res_id, collection_name):
+    with UseResId(res_id):
+        get_db()[collection_name].reindex()
+    return empty_success()
+
+
+@mws.route('/<res_id>/db/<collection_name>/dropIndex', methods=['DELETE'])
+@crossdomain(headers='Content-type', origin=REQUEST_ORIGIN)
+@check_session_id
+@ratelimit
+def db_collection_drop_index(res_id, collection_name):
+    name = request.json.get('name')
+    with UseResId(res_id):
+        get_db()[collection_name].drop_index(name)
+    return empty_success()
+
+
+@mws.route('/<res_id>/db/<collection_name>/dropIndexes', methods=['DELETE'])
+@crossdomain(headers='Content-type', origin=REQUEST_ORIGIN)
+@check_session_id
+@ratelimit
+def db_collection_drop_indexes(res_id, collection_name):
+    with UseResId(res_id):
+        get_db()[collection_name].drop_indexes()
+    return empty_success()
+
+
+@mws.route('/<res_id>/db/<collection_name>/getIndexes', methods=['GET'])
+@crossdomain(headers='Content-type', origin=REQUEST_ORIGIN)
+@check_session_id
+@ratelimit
+def db_collection_get_indexes(res_id, collection_name):
+    db = get_db()
+    coll = get_internal_coll_name(res_id, collection_name)
+    return to_json(list(db['system.indexes'].find({'ns': db[coll].full_name})))
 
 
 @mws.route('/<res_id>/db/getCollectionNames',
