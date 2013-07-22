@@ -62,7 +62,7 @@
         return mongo.events.bind(shell, 'db:collection:find', findCallback, null, function(s, e, d){ return d.collection === targetCollection });
       }).then(function(){
         return mongo.events.bindOnce(shell, 'cursor:execute', function(e, data){
-          $(data.shell.$rootElement).unbind('mws:db:collection:find', findCallback);
+          mongo.events.unbind(data.shell, 'db:collection:find', findCallback);
 
           var existenceVerb = data.result.length === 1 ? 'is' : 'are';
           var plural = data.result.length === 1 ? '' : 's';
