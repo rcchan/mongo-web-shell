@@ -23,6 +23,9 @@ mongo.Readline.prototype.keydown = function (event) {
     line = this.getNewerHistoryEntry();
     break;
   case key.enter:
+    if (event.shiftKey) {
+      return; // Shift+Enter should insert a new line
+    }
     this.submit(this.inputBox.getValue());
     break;
   default:
@@ -67,7 +70,7 @@ mongo.Readline.prototype.getOlderHistoryEntry = function () {
   if (this.history.length === 0) { return undefined; }
 
   if (this.historyIndex === this.history.length) {
-    this.historyFirstCommand = this.$input.val();
+    this.historyFirstCommand = this.inputBox.getValue();
   }
 
   this.historyIndex = Math.max(this.historyIndex - 1, 0);

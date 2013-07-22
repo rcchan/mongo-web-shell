@@ -169,10 +169,12 @@ mongo.Shell.prototype.insertResponseLine = function (data, prepend) {
   this.$responseWrapper.css({display: ''});
   this.$inputDiv.css({marginTop: '-8px'});
   var separator = this.hasShownResponse ? '\n' : '';
+  var isString = typeof(data) === 'string';
+  data = mongo.util.toString(data);
   this.responseBlock.replaceRange(separator + data, lastPos);
 //  this.responseBlock.setValue(this.responseBlock.getValue() + separator + data);
 
-  if (typeof(data) === 'string' && !prepend) {
+  if (isString && !prepend) {
     var newLastLine = this.responseBlock.lineCount() - 1;
     this.responseBlock.addLineClass(newLastLine, 'text', 'mws-cm-plain-text');
   }

@@ -20,7 +20,7 @@ mongo.events = {
   bind: function(shell, event, handler, data){
     return $.Deferred(function(deferred){
       data = $.extend({shell: shell}, data);
-      $(shell.$rootElement).bind('mws:' + event, data, function(event){
+      $(shell.$rootElement).bind('mws:' + event, data, function(event, data){
         if (typeof handler === 'function'){
           handler.call(shell, event, data);
         }

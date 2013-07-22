@@ -18,9 +18,9 @@
   </div>
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script src="/dist/mongoWebShell.js" data-css-path="/mongoWebShell.css"></script>
+  <script src="/dist/mongoWebShell.js" data-css-path="dist/mongoWebShell.css"></script>
   <script type="text/javascript">
-    $(window).load(function(){
+    $(window).load(function(){setTimeout(function () {
       var shell = mongo.shells[0];
       $('#prompt').html('Try running an insert command<br />' +
                         'You can do this by typing db.collection.insert(...)');
@@ -39,7 +39,7 @@
                             JSON.stringify($.makeArray(data.arguments)) + ' as arguments');
         });
       }).then(function(){
-        return mongo.events.bindOnce(shell, 'mws:cursor:execute', function(e, data){
+        return mongo.events.bindOnce(shell, 'cursor:execute', function(e, data){
           $('#prompt').append('<br />Find returned with ' + data.result.length + ' results<br />' +
                               'Try cleaning up this data with db.collection.remove(...)');
         });
@@ -50,7 +50,7 @@
                             ' as arguments<br />You graduate!');
         });
       });
-    });
+    }, 100)});
   </script>
 </body>
 </html>
