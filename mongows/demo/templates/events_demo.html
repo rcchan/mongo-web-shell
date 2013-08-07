@@ -1,97 +1,75 @@
+<!-----------------------------------------------------------------------------
+    Copyright 2013 10gen Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+------------------------------------------------------------------------------>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>MongoDB Tutorial</title>
+  <title>MongoDB Web Shell Sample Page</title>
   <style type="text/css">
     {% include "default.css" %}
   </style>
 </head>
 <body>
   <div class="content-wrapper">
-    <h1 style="text-align: center">Let's learn MongoDB!</h1>
-
-    <h3>We'll walk you through the basics of using MongoDB. You can use the
-      shell below to try out commands and follow along with the tutorial.</h3>
-
-    <p id="prompt"></p>
+    <h1>Welcome to the mongoDB web shell!</h1>
+    <p id="prompt">Try</p>
     <div class="mongo-web-shell">
-      <!--<p>connecting to database</p>-->
+      <p>connecting to database</p>
       <p>type "help" for help</p>
     </div>
   </div>
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script src="/dist/mongoWebShell.js" data-css-path="dist/mongoWebShell.css"></script>
+  <script src="/dist/mongoWebShell.js" data-css-path="/mongoWebShell.css"></script>
   <script type="text/javascript">
-    $(window).load(function(){setTimeout(function () {
-      var wrapInCodeBlock = function(str) {
-        return '<code style="background: lightgray; padding: 2px; border-radius: 2px">' + str + '</code>';
-      };
-
-
+    $(window).load(function(){
       var shell = mongo.shells[0];
       var targetCollection = null;
-      var findCallback = function(e, data){
-        var args = $.makeArray(data.arguments);
-        var query = args.length ? ' that match ' + wrapInCodeBlock(JSON.stringify(args[0])) : '';
-        var projection = args.length < 2 ? '' : ' the fields ' + wrapInCodeBlock(JSON.stringify(args[1])) + ' in';
+      $('#prompt').html('Try running an insert command<br />' +
+                        'You can do this by typing db.collection.insert(...)');
 
-        $('#prompt').html('Good! You looked for' + projection +' all files' + query + ' in collection ' + wrapInCodeBlock(data.collection) + '.')
-        $('<div />').prop('id', 'additional').appendTo('#prompt');
-      };
-
-      $('#prompt').html('Let\'s get started by running an insert command!<br />' +
-                        'You can do this by typing ' + wrapInCodeBlock('db.&lt;collection name&gt;.insert(...)'));
-      mongo.events.bindOnce(shell, 'db:collection:insert', function(e, data){
-        var args = $.makeArray(data.arguments);
-        var firstArg = args[0];
-        if (!Array.isArray(firstArg)) {
-          firstArg = [firstArg];
-        }
-        var argsString = firstArg.map(function (doc) {
-          return wrapInCodeBlock(JSON.stringify(doc))
-        }).join(' and ');
-
-        $('#prompt').html('Great job! You inserted ' + argsString +
-                          ' into collection ' + wrapInCodeBlock(data.collection) + '.<br />' +
-                          'Let\'s make sure your data was saved to the database.<br />' +
-                          'You can do this by typing ' + wrapInCodeBlock('db.' + data.collection + '.find(...)'));
+      mongo.events.bindOnce(shell, 'db.collection.insert', function(data){
         targetCollection = data.collection;
-      }, null, function(s, e, d){ return d.arguments.length && typeof d.arguments[0] === 'object' && Object.keys(d.arguments[0]).length }).then(function(){
-        return mongo.events.bind(shell, 'db:collection:find', findCallback, null, function(s, e, d){ return d.collection === targetCollection });
-      }).then(function(){
-        return mongo.events.bindOnce(shell, 'cursor:execute', function(e, data){
-          mongo.events.unbind(data.shell, 'db:collection:find', findCallback);
+        $('#prompt').html('Great job. You called insert on ' + data.collection + ' with ' +
+                          JSON.stringify($.makeArray(data.arguments)) +
+                          ' as arguments<br />'+
+                          'Try running a find command to make sure your ' +
+                          'data was saved to the database.<br />' +
+                          'You can do this by typing db.' + targetCollection + '.find(...)');
 
-          var existenceVerb = data.result.length === 1 ? 'is' : 'are';
-          var plural = data.result.length === 1 ? '' : 's';
-          $('#additional').html('<br />There ' + existenceVerb + ' ' + data.result.length + ' document' + plural + ' matching this query.<br />' +
-                              'Now that we\'re sure the database kept our data, ' +
-                              'let\'s make sure we clean up after ourselves. We can remove this data with ' +
-                              wrapInCodeBlock('db.' + targetCollection + '.remove(...)'));
-        }, null, function(s, e, d){
-          if (!d.result.length){
-            $('#additional').html('<br />There were no documents matching the query.<br />' +
-                                'Run a query showing that at least one element was saved to the database.<br />' +
-                                'You can do this by typing ' + wrapInCodeBlock('db.' + targetCollection + '.find(...)'));
-          }
-          return d.result.length;
-        });
       }).then(function(){
-        return mongo.events.bindOnce(shell, 'db:collection:remove', function(e, data){
-          var args = $.makeArray(data.arguments);
-          var removeString = args.length === 0 ? '' : ' that match ' + wrapInCodeBlock(JSON.stringify(args[0]));
-          $('#prompt').html('Great job. You removed all files' + removeString + ' from collection ' + wrapInCodeBlock(data.collection) + '<br />' +
-                            'Finally, remove the collection itself with db.' + targetCollection + '.drop()');
-        }, null, function(s, e, d){ return d.collection === targetCollection });
+        return mongo.events.bindOnce(shell, 'db.collection.find', function(data){
+          $('#prompt').html('Great job. You called find on ' + data.collection + ' with ' +
+                            JSON.stringify($.makeArray(data.arguments)) + ' as arguments');
+        }, null, function(d){return d.collection === targetCollection});
       }).then(function(){
-        return mongo.events.bindOnce(shell, 'db:collection:drop', function(e, data){
-          $('#prompt').html('Awesome! You removed collection ' + wrapInCodeBlock(data.collection) + '.' + '<br />' +
-          'Congratulations, you\'ve mastered the basics! Welcome to the MongoDB Community.');
-        }, null, function(s, e, d){ return d.collection === targetCollection });
+        return mongo.events.bindOnce(shell, 'cursor.execute', function(data){
+          $('#prompt').append('<br />Find returned with ' + data.result.length + ' results<br />' +
+                              'Try cleaning up this data with db.' + targetCollection + '.remove(...)');
+        }, null, function(d){return d.result.length > 0});
+      }).then(function(){
+        return mongo.events.bindOnce(shell, 'db.collection.remove', function(data){
+          $('#prompt').html('Great job. You called remove on ' + data.collection + ' with ' +
+                            JSON.stringify($.makeArray(data.arguments)) +
+                            ' as arguments<br />You graduate!');
+        }, null, function(d){return d.collection === targetCollection});
       });
-    }, 100)});
+    });
   </script>
 </body>
 </html>

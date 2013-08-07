@@ -1,3 +1,18 @@
+/*    Copyright 2013 10gen Inc.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 /* global describe, it, beforeEach, mongo, spyOn, expect, jasmine */
 /* jshint camelcase: false */
 describe('The Collection class', function () {
@@ -92,6 +107,13 @@ describe('The Collection class', function () {
       cursor.hasNext.andReturn(false);
       expect(coll.findOne()).toBeNull();
     });
+
+    it('fires the appropriate event', function(){
+      var ft = spyOn(mongo.events, 'functionTrigger');
+      coll.findOne({a: 1}, {b: 1});
+      expect(ft).toHaveBeenCalledWith(coll.shell, 'db.collection.findOne', [{a: 1}, {b: 1}],
+                               {collection: name_});
+    });
   });
 
   describe('insert', function () {
@@ -116,6 +138,13 @@ describe('The Collection class', function () {
     it('uses the collection\'s shell', function () {
       coll.insert({});
       expect(makeRequest.calls[0].args[4]).toBe(coll.shell);
+    });
+
+    it('fires the appropriate event', function(){
+      var ft = spyOn(mongo.events, 'functionTrigger');
+      coll.insert({a: 1});
+      expect(ft).toHaveBeenCalledWith(coll.shell, 'db.collection.insert', [{a: 1}],
+                               {collection: name_});
     });
   });
 
@@ -142,6 +171,13 @@ describe('The Collection class', function () {
     it('uses the collection\'s shell', function () {
       coll.remove({}, true);
       expect(makeRequest.calls[0].args[4]).toBe(coll.shell);
+    });
+
+    it('fires the appropriate event', function(){
+      var ft = spyOn(mongo.events, 'functionTrigger');
+      coll.remove({a: 1});
+      expect(ft).toHaveBeenCalledWith(coll.shell, 'db.collection.remove', [{a: 1}],
+                               {collection: name_});
     });
   });
 
@@ -201,6 +237,14 @@ describe('The Collection class', function () {
       coll.update({}, {});
       expect(makeRequest.calls[0].args[4]).toBe(coll.shell);
     });
+
+    it('fires the appropriate event', function(){
+      var ft = spyOn(mongo.events, 'functionTrigger');
+      coll.update({a: 1}, {b: 5}, true, false);
+      expect(ft).toHaveBeenCalledWith(coll.shell, 'db.collection.update', [
+        {a: 1}, {b: 5}, true, false
+      ], {collection: name_});
+    });
   });
 
   describe('aggregate', function(){
@@ -242,6 +286,13 @@ describe('The Collection class', function () {
       var actual = coll.aggregate({});
       expect(actual).toEqual(results);
     });
+
+    it('fires the appropriate event', function(){
+      var ft = spyOn(mongo.events, 'functionTrigger');
+      coll.aggregate({});
+      expect(ft).toHaveBeenCalledWith(coll.shell, 'db.collection.aggregate', [{}],
+                               {collection: name_});
+    });
   });
 
   describe('drop', function () {
@@ -259,6 +310,13 @@ describe('The Collection class', function () {
     it('uses the collection\'s shell', function () {
       coll.drop();
       expect(makeRequest.calls[0].args[4]).toBe(coll.shell);
+    });
+
+    it('fires the appropriate event', function(){
+      var ft = spyOn(mongo.events, 'functionTrigger');
+      coll.drop();
+      expect(ft).toHaveBeenCalledWith(coll.shell, 'db.collection.drop', [],
+                               {collection: name_});
     });
   });
 
