@@ -52,8 +52,6 @@ def crossdomain(origin=None, methods=None, headers=None,
         methods = ', '.join(sorted(x.upper() for x in methods))
     if isinstance(headers, list):
         headers = ', '.join(x.upper() for x in headers)
-    if isinstance(origin, list):
-        origin = ', '.join(origin)
     if isinstance(max_age, timedelta):
         max_age = max_age.total_seconds()
 
@@ -66,7 +64,7 @@ def crossdomain(origin=None, methods=None, headers=None,
 
     def decorator(f):
         def wrapped_function(*args, **kwargs):
-            cors_origin = origin or current_app.config.get('CORS_ORIGIN', '')
+            cors_origin = origin or current_app.config.get('CORS_ORIGIN', [])
 
             if automatic_options and request.method == 'OPTIONS':
                 resp = current_app.make_default_options_response()
@@ -76,8 +74,9 @@ def crossdomain(origin=None, methods=None, headers=None,
                 return resp
 
             h = resp.headers
-
-            h['Access-Control-Allow-Origin'] = cors_origin
+            req_origin = request.headers.get('Origin', '')
+            if req_origin in cors_origin:
+                h['Access-Control-Allow-Origin'] = req_origin
             h['Access-Control-Allow-Methods'] = get_methods()
             h['Access-Control-Max-Age'] = str(max_age)
             h['Access-Control-Allow-Credentials'] = 'true'

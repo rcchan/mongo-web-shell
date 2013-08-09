@@ -57,6 +57,8 @@ def override_config_from_envvar(app):
     app.config['NO_FRONTEND'] = bool(app.config['NO_FRONTEND'])
     app.config['NO_VALIDATION'] = bool(app.config['NO_VALIDATION'])
     app.config['PORT'] = int(app.config['PORT'])
+    if app.config['CORS_ORIGIN']:
+        app.config['CORS_ORIGIN'] = app.config['CORS_ORIGIN'].split(',')
 
 
 def configure_logging(app):
